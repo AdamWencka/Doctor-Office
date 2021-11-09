@@ -4,7 +4,7 @@ import com.example.DoctorOffice.model.Appointment;
 import com.example.DoctorOffice.model.Doctor;
 import com.example.DoctorOffice.model.Patient;
 import com.example.DoctorOffice.model.Prescription;
-import com.example.DoctorOffice.model.enums.AppointmentStatus;
+
 import com.example.DoctorOffice.service.AppointmentService;
 import com.example.DoctorOffice.service.DoctorService;
 import com.example.DoctorOffice.service.PatientService;
@@ -126,7 +126,6 @@ public class ServiceController {
             @RequestParam("appointmentDate") String appointmentDate,
             @RequestParam("appointmentStartTime") String appointmentStartTime,
             @RequestParam("appointmentEndTime") String appointmentEndTime,
-            @RequestParam("status") AppointmentStatus status,
             @RequestParam("roomNumber") String roomNumber,
             @RequestParam("doctorId") Integer doctorId,
             @RequestParam("patientId") Integer patientId)
@@ -136,7 +135,7 @@ public class ServiceController {
         DateTimeFormatter formatter2 =  DateTimeFormatter.ofPattern("HH.mm");
         LocalTime startTime = LocalTime.parse(appointmentStartTime,formatter2);
         LocalTime endTime = LocalTime.parse(appointmentEndTime,formatter2);
-        return appointmentService.setAppointment(new Appointment(date,startTime,endTime,status,roomNumber),doctorId,patientId);
+        return appointmentService.setAppointment(new Appointment(date,startTime,endTime,roomNumber),doctorId,patientId);
     }
     @GetMapping("/appointments")
     public List<Appointment> getAllAppointments(){
@@ -159,34 +158,26 @@ public class ServiceController {
 
     @GetMapping("/appointment/doctorId={doctorId}")
     public Appointment findAppointmentByDoctor(@PathVariable("doctorId")Integer doctorId){
-        Optional appointmentFound = appointmentService.findByDoctor(doctorId);
-        if(!appointmentFound.isPresent()){
+        List<Appointment> appointmentFound = appointmentService.findByDoctor(doctorId);
+        if(appointmentFound.isEmpty()){
             return null;
         }
-        return (Appointment) appointmentFound.get();
+        return (Appointment) appointmentFound;
     }
     @GetMapping("/appointment/patientId={patientId}")
     public Appointment findAppointmentByPatient(@PathVariable("patientId")Integer patientId){
-        Optional appointmentFound = appointmentService.findByPatient(patientId);
-        if(!appointmentFound.isPresent()){
+        List<Appointment> appointmentFound = appointmentService.findByPatient(patientId);
+        if(appointmentFound.isEmpty()){
             return null;
         }
-        return (Appointment) appointmentFound.get();
+        return (Appointment) appointmentFound;
     }
-    @GetMapping("/appointment/status={status}")
-    public  Optional<Appointment> findAppointmentByStatus(@PathVariable("status")AppointmentStatus appointmentStatus){
-        return appointmentService.findByStatus(appointmentStatus);
-    }
+
     @GetMapping("/appointmentsDateDesc")
     public List<Appointment> getAllAppointmentsDateDesc(){
         return appointmentService.findAllByDateDesc();
     }
-    @PutMapping("/appointment/status")
-    public  String changeAppointmentStatus(
-            @RequestParam("id") Long id,
-            @RequestParam("status") AppointmentStatus status){
-        return appointmentService.changeAppointmentStatus(id,status);
-    }
+
     @PostMapping("/prescriptions/prescriptionCreate")
     public Prescription createPrescription(
             @RequestParam("disease") String disease,
@@ -223,19 +214,19 @@ public class ServiceController {
     }
     @GetMapping("/prescription/doctorId={doctorId}")
     public Prescription findPrescriptionByDoctor(@PathVariable("doctorId")Integer doctorId){
-        Optional prescriptionFound = prescriptionService.findByDoctor(doctorId);
-        if(!prescriptionFound.isPresent()){
+        List<Prescription> prescriptionFound = prescriptionService.findByDoctor(doctorId);
+        if(prescriptionFound.isEmpty()){
             return null;
         }
-        return (Prescription) prescriptionFound.get();
+        return (Prescription) prescriptionFound;
     }
     @GetMapping("/prescription/patientId={patientId}")
     public Prescription findPrescriptionByPatient(@PathVariable("patientId")Integer patientId){
-        Optional prescriptionFound = prescriptionService.findByPatient(patientId);
-        if(!prescriptionFound.isPresent()){
+        List<Prescription> prescriptionFound = prescriptionService.findByPatient(patientId);
+        if(prescriptionFound.isEmpty()){
             return null;
         }
-        return (Prescription) prescriptionFound.get();
+        return (Prescription) prescriptionFound;
     }
     @GetMapping("/prescription/disease={disease}")
     public Prescription findPrescriptionByDisease(@PathVariable("disease") String disease){

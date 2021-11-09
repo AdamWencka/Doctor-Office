@@ -1,6 +1,6 @@
 package com.example.DoctorOffice.model;
 
-import com.example.DoctorOffice.model.enums.AppointmentStatus;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
@@ -25,11 +25,11 @@ public class Appointment {
     private Long appointmentId;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate appointmentDate;
-    @DateTimeFormat(pattern = "HH.mm")
+    @DateTimeFormat(pattern = "HH:mm")
     private LocalTime appointmentStartTime;
-    @DateTimeFormat(pattern = "HH.mm")
+    @DateTimeFormat(pattern = "HH:mm")
     private LocalTime appointmentEndTime;
-    private AppointmentStatus status = AppointmentStatus.Available;
+
     private String roomNumber;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name="patient_id",nullable = false)
@@ -40,22 +40,23 @@ public class Appointment {
     @JsonIgnoreProperties({"appointmentsList"})
     private Doctor doctor;
 
-    public Appointment(LocalDate appointmentDate, LocalTime appointmentStartTime, LocalTime appointmentEndTime, AppointmentStatus status, String roomNumber, Patient patient, Doctor doctor) {
+    public Appointment(LocalDate appointmentDate, LocalTime appointmentStartTime, LocalTime appointmentEndTime,  String roomNumber, Patient patient, Doctor doctor) {
         this.appointmentDate = appointmentDate;
         this.appointmentStartTime = appointmentStartTime;
         this.appointmentEndTime = appointmentEndTime;
-        this.status = status;
+
         this.roomNumber = roomNumber;
         this.patient = patient;
         this.doctor = doctor;
     }
 
-    public Appointment(LocalDate appointmentDate, LocalTime appointmentStartTime, LocalTime appointmentEndTime, AppointmentStatus status, String roomNumber) {
+    public Appointment(LocalDate appointmentDate, LocalTime appointmentStartTime, LocalTime appointmentEndTime, String roomNumber) {
         this.appointmentDate = appointmentDate;
         this.appointmentStartTime = appointmentStartTime;
         this.appointmentEndTime = appointmentEndTime;
-        this.status = status;
         this.roomNumber = roomNumber;
     }
+
+
 }
 

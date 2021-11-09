@@ -7,6 +7,7 @@ import com.example.DoctorOffice.repository.DoctorRepository;
 import com.example.DoctorOffice.repository.PatientRepository;
 import com.example.DoctorOffice.repository.PrescriptionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,6 +33,8 @@ public class PrescriptionService {
         }
         Prescription prescriptionToSave = null;
         if(prescription.getPrescriptionId()!= null ){
+            prescription.setDoctor(doctorFound);
+            prescription.setPatient(patientFound);
             prescriptionToSave = prescription;
         }else {
             prescriptionToSave = new Prescription(prescription.getDisease(), prescription.getMedicine(),prescription.getDose(), prescription.getRoute(), prescription.getFrequency(), prescription.getStartDate(),prescription.getEndDate(), prescription.getRemarks(), patientFound,doctorFound);
@@ -57,7 +60,7 @@ public class PrescriptionService {
         }
         return "Prescription not found!";
     }
-    public Optional<Prescription> findByDoctor(Integer doctorId){
+    public List<Prescription> findByDoctor(Integer doctorId){
         Optional<Doctor> assignedDoctor = doctorRepository.findById(doctorId);
         if(assignedDoctor.isPresent()){
             Doctor doctor = assignedDoctor.get();
@@ -66,7 +69,7 @@ public class PrescriptionService {
         return null;
 
     }
-    public Optional<Prescription> findByPatient(Integer patientId){
+    public List<Prescription> findByPatient(Integer patientId){
         Optional<Patient> assignedPatient = patientRepository.findById(patientId);
         if(assignedPatient.isPresent()){
             Patient patient = assignedPatient.get();

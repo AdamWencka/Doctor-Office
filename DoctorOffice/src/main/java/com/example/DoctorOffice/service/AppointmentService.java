@@ -3,14 +3,14 @@ package com.example.DoctorOffice.service;
 import com.example.DoctorOffice.model.Appointment;
 import com.example.DoctorOffice.model.Doctor;
 import com.example.DoctorOffice.model.Patient;
-import com.example.DoctorOffice.model.Prescription;
-import com.example.DoctorOffice.model.enums.AppointmentStatus;
+
 import com.example.DoctorOffice.repository.AppointmentRepository;
 import com.example.DoctorOffice.repository.DoctorRepository;
 import com.example.DoctorOffice.repository.PatientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,7 +36,7 @@ public class AppointmentService {
         if(appointment.getAppointmentId()!= null ){
             appointmentToSave = appointment;
         }else {
-            appointmentToSave = new Appointment(appointment.getAppointmentDate(), appointment.getAppointmentStartTime(),appointment.getAppointmentEndTime(), appointment.getStatus(), appointment.getRoomNumber(),patientFound ,doctorFound);
+            appointmentToSave = new Appointment(appointment.getAppointmentDate(), appointment.getAppointmentStartTime(),appointment.getAppointmentEndTime() , appointment.getRoomNumber(),patientFound ,doctorFound);
         }
         return appointmentRepository.save(appointmentToSave);
     }
@@ -60,7 +60,7 @@ public class AppointmentService {
         return "Appointment not found!";
 
     }
-    public Optional<Appointment> findByDoctor(Integer doctorId)
+    public List<Appointment> findByDoctor(Integer doctorId)
     {
         Optional<Doctor> assignedDoctor = doctorRepository.findById(doctorId);
         if(assignedDoctor.isPresent()){
@@ -69,7 +69,16 @@ public class AppointmentService {
         }
        return null;
     }
-    public Optional<Appointment> findByPatient(Integer patientId){
+    /*public List<Appointment> findByDoctorAndDate(Integer doctorId, LocalDate date)
+    {
+        Optional<Doctor> assignedDoctor = doctorRepository.findById(doctorId);
+        if(assignedDoctor.isPresent()){
+            Doctor doctor = assignedDoctor.get();
+            return appointmentRepository.findByDoctorAndDate(doctor.getDoctorId(),date);
+        }
+        return null;
+    }*/
+    public List<Appointment> findByPatient(Integer patientId){
         Optional<Patient> assignedPatient = patientRepository.findById(patientId);
         if(assignedPatient.isPresent()){
             Patient patient = assignedPatient.get();
@@ -77,26 +86,18 @@ public class AppointmentService {
         }
         return null;
     }
-    public Optional<Appointment> findByStatus(AppointmentStatus appointmentStatus){
-        return appointmentRepository.findByStatus(appointmentStatus);
-    }
+   /* public List<Appointment> findByPatientAndDate(Integer patientId, LocalDate date){
+        Optional<Patient> assignedPatient = patientRepository.findById(patientId);
+        if(assignedPatient.isPresent()){
+            Patient patient = assignedPatient.get();
+            return appointmentRepository.findByPatientAndDate(patient.getPatientId(),date);
+        }
+        return null;
+    }*/
 
     public List<Appointment> findAllByDateDesc(){
         return  appointmentRepository.findAllByDateDesc();
     }
 
-    public String changeAppointmentStatus(Long id, AppointmentStatus appointmentStatus){
-        Optional<Appointment> appointmentStatusToChange = appointmentRepository.findById(id);
-        if (appointmentStatusToChange.isPresent()){
-            Appointment appointmentFound = appointmentStatusToChange.get();
-            if(appointmentStatus!= appointmentFound.getStatus()){
-                appointmentFound.setStatus(appointmentStatus);
-                appointmentRepository.save(appointmentFound);
-                return  "Changed status to: " + appointmentFound.getStatus();
-            }else {
-                return  "Task has already that status";
-            }
-        }
-        return "Status not changed";
-    }
+
 }

@@ -1,32 +1,39 @@
 package com.example.DoctorOffice.views;
 
 
+import com.example.DoctorOffice.model.Appointment;
 import com.example.DoctorOffice.model.Doctor;
 import com.example.DoctorOffice.model.Patient;
+import com.example.DoctorOffice.model.Prescription;
 import com.example.DoctorOffice.service.AppointmentService;
 import com.example.DoctorOffice.service.DoctorService;
 import com.example.DoctorOffice.service.PatientService;
 import com.example.DoctorOffice.service.PrescriptionService;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import com.vaadin.flow.spring.annotation.UIScope;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Optional;
 
 
-// TODO : Prescriptions View where patient can see his disease history and prescription and doctor can create and edit those prescriptions and also find them by patient
 // TODO : Appointment View (calendar if possible) where doctor can create/edit appointments in a given day also book and assign them to patients, and where patient can see them and assign himself to them
 @UIScope
 @SpringComponent
@@ -48,6 +55,8 @@ public class ViewController extends VerticalLayout {
     VerticalLayout vl2;
     VerticalLayout vl3;
     Grid<Doctor> doctorGrid;
+    Grid<Prescription> prescriptionGrid;
+    Grid<Appointment> appointmentGrid;
     Label label;
     Button loginPatient;
     Button registerPatient;
@@ -57,6 +66,9 @@ public class ViewController extends VerticalLayout {
     Button goToAppointments;
     Button goToServiceAndPrices;
     Button returnToPreviousPanel;
+    Button searchAllPrescriptions;
+    Button searchPrescriptionsUsingPatient;
+    Button searchAppointments;
     H1 h1;
     H2 h2info;
     H2 h2doctors;
@@ -68,7 +80,35 @@ public class ViewController extends VerticalLayout {
     TextField birthDateField;
     TextField phoneField;
     PasswordField password;
+
+
+    //Prescriptions
+    TextField prescriptionId;
+    TextField disease;
+    TextField medicine;
+    TextField dose;
+    TextField route;
+    TextField frequency;
+    TextField startDate;
+    TextField endDate;
+    TextArea remarks;
+    TextField nameField2;
+    TextField lastNameField2;
+
+    Appointment selectedAppointment;
+
+    DatePicker datePicker;
+    TimePicker timePicker;
+    TextField roomNumberField;
+    Button createAppointment;
+    Button editAppointment;
+    Button deleteAppointment;
+
+
     Button loginButton;
+    boolean formFilled = false;
+    Button createPrescription;
+    Button editPrescription;
     TextField doctorEmail;
     HorizontalLayout hl;
     HorizontalLayout hl2;
@@ -426,27 +466,246 @@ public class ViewController extends VerticalLayout {
     }
     public void prescriptionsPanel(){
         vl = new VerticalLayout();
+        vl2 = new VerticalLayout();
+        vl3 = new VerticalLayout();
+        hl = new HorizontalLayout();
+        hl2 = new HorizontalLayout();
+
         h1 = new H1("Gabinet Lekarski Medic");
         h2info = new H2("Historia chorób, recepty");
-
+        nameField = new TextField("Imię pacjenta");
+        lastNameField = new TextField("Nazwisko pacjenta");
         returnToPreviousPanel = new Button( "Powrót", buttonClickEvent -> {
             removeAll();
             mainPagePanel();
         });
+        if(doctor !=null && zalogowany ){
+            searchAllPrescriptions = new Button("Wyszukaj wszyskie opisy chorób i recepty wystawione przez ciebie", buttonClickEvent -> {
+               prescriptionGrid.setItems(prescriptionService.findByDoctor(doctor.getDoctorId()));
+            });
+            searchPrescriptionsUsingPatient = new Button("Wyszukaj wszystkie opisy chorób i recepty dla danego pacjenta", buttonClickEvent -> {
+                Patient patientAssigned = patientService.findByNameAndLastName(nameField.getValue(),lastNameField.getValue());
+                if(patientAssigned !=null)
+                prescriptionGrid.setItems(prescriptionService.findByPatient(patientAssigned.getPatientId()));
+                else Notification.show("Nie znaleziono takiego pacjenta");
+            });
+            prescriptionGrid = new Grid<>(Prescription.class);
+            prescriptionGrid.setColumns("prescriptionId", "disease", "medicine", "dose","route", "frequency","startDate","endDate","remarks");
+            prescriptionGrid.getColumnByKey("prescriptionId").setHeader("Id:").setWidth("50px");
+            prescriptionGrid.getColumnByKey("disease").setHeader("Nazwa choroby:");
+            prescriptionGrid.getColumnByKey("medicine").setHeader("Nazwa lekarstwa:");
+            prescriptionGrid.getColumnByKey("dose").setHeader("Dawka:");
+            prescriptionGrid.getColumnByKey("route").setHeader("Droga podania lekarstwa:");
+            prescriptionGrid.getColumnByKey("frequency").setHeader("Częstotliwość:");
+            prescriptionGrid.getColumnByKey("startDate").setHeader("Dzień rozpoczęcia przyjmowania leku:");
+            prescriptionGrid.getColumnByKey("endDate").setHeader("Dzień końca przyjmowania leku:");
+            prescriptionGrid.getColumnByKey("remarks").setHeader("Uwagi, zalecenia:");
+            prescriptionGrid.setItems(prescriptionService.findByDoctor(doctor.getDoctorId()));
+            prescriptionGrid.setThemeName("wrap-cell-content");
+
+            hl.add(nameField,lastNameField);
+
+            label = new Label("Dodaj lub zmodyfikuj historię choroby i receptę:");
+            prescriptionId = new TextField("Id histori choroby (Wypełnij tylko, jeśli chcesz edytować)");
+            nameField2= new TextField("Imię pacjenta:");
+            lastNameField2 = new TextField("Nazwisko pacjenta:");
+            disease = new TextField("Choroba:");
+            medicine = new TextField("Lekarstwo:");
+            dose = new TextField("Dawka:");
+            route = new TextField("Droga podania leku:");
+            frequency = new TextField("Częstotliwość podawania leku:");
+            startDate = new TextField("Data rozpoczęcia przyjmowania leku (rrrr-MM-dd):");
+            endDate = new TextField("Data zakończenia przyjmowania leku (rrrr-MM-dd):");
+            remarks = new TextArea("Opis, uwagi, opinia lekarska:");
+            prescriptionId.setWidth("200px");
+            nameField2.setWidth("150px");
+            lastNameField2.setWidth("150px");
+            disease.setWidth("150px");
+            medicine.setWidth("300px");
+            dose.setWidth("150px");
+            route.setWidth("200px");
+            frequency.setWidth("300px");
+            startDate.setWidth("350px");
+            endDate.setWidth("350px");
+            remarks.setWidth("800px");
+            remarks.setHeight("300px");
+
+            createPrescription = new Button("Utwórz rekord w historii chorób i recept", buttonClickEvent -> {
+                Patient patientPrescription = patientService.findByNameAndLastName(nameField2.getValue(),lastNameField2.getValue());
+                if(patientPrescription == null)
+                    Notification.show("Nie istnieje taki pacjent");
+                else {
+                    DateTimeFormatter formatter1 = DateTimeFormatter.ISO_DATE;
+                    LocalDate date1 = LocalDate.parse(startDate.getValue(),formatter1);
+                    LocalDate date2 = LocalDate.parse(endDate.getValue(),formatter1);
+                    prescriptionService.setPrescription(new Prescription(
+                            disease.getValue(),
+                            medicine.getValue(),
+                            dose.getValue(),
+                            route.getValue(),
+                            frequency.getValue(),
+                            date1,
+                            date2,
+                            remarks.getValue()
+                    ), doctor.getDoctorId(),patientPrescription.getPatientId());
+                    removeAll();
+                    prescriptionsPanel();
+                }
+            });
+            Button fillEditForm = new Button("Uzupełnij formularz istniejącym rekordem", buttonClickEvent -> {
+                Long id = Long.parseLong(prescriptionId.getValue());
+                Optional<Prescription> prescriptionExists = prescriptionService.findPrescriptionUsingId(id);
+                Prescription prescriptionFound = null;
+                if(prescriptionExists.isPresent()){
+                    prescriptionFound = prescriptionExists.get();
+                    disease.setValue(prescriptionFound.getDisease());
+                    medicine.setValue(prescriptionFound.getMedicine());
+                    dose.setValue(prescriptionFound.getDose());
+                    route.setValue(prescriptionFound.getRoute());
+                    frequency.setValue(prescriptionFound.getFrequency());
+                    startDate.setValue(prescriptionFound.getStartDate().toString());
+                    endDate.setValue(prescriptionFound.getEndDate().toString());
+                    remarks.setValue(prescriptionFound.getRemarks());
+                    nameField2.setValue(prescriptionFound.getPatient().getName());
+                    lastNameField2.setValue(prescriptionFound.getPatient().getLastName());
+                    formFilled = true;
+                    editPrescription.setEnabled(true);
+                } else {
+                    Notification.show("Nie ma takiego rekordu");
+                }
+            });
+            editPrescription = new Button("Edytuj historię choroby i receptę", buttonClickEvent ->{
+                Patient patientPrescription = patientService.findByNameAndLastName(nameField2.getValue(),lastNameField2.getValue());
+                Long id = Long.parseLong(prescriptionId.getValue());
+                Optional<Prescription> prescriptionExists = prescriptionService.findPrescriptionUsingId(id);
+                Prescription prescriptionFound = null;
+                if(patientPrescription != null) {
+                    if (prescriptionExists.isPresent()) {
+                        prescriptionFound = prescriptionExists.get();
+                        prescriptionFound.setDisease(disease.getValue());
+                        prescriptionFound.setMedicine(medicine.getValue());
+                        prescriptionFound.setDose(dose.getValue());
+                        prescriptionFound.setRoute(route.getValue());
+                        prescriptionFound.setFrequency(frequency.getValue());
+                        DateTimeFormatter formatter1 = DateTimeFormatter.ISO_DATE;
+                        LocalDate date1 = LocalDate.parse(startDate.getValue(), formatter1);
+                        LocalDate date2 = LocalDate.parse(endDate.getValue(), formatter1);
+                        prescriptionFound.setStartDate(date1);
+                        prescriptionFound.setEndDate(date2);
+                        prescriptionFound.setRemarks(remarks.getValue());
+                        prescriptionFound.setDoctor(doctor);
+                        prescriptionFound.setPatient(patientPrescription);
+                        prescriptionService.setPrescription( prescriptionFound, doctor.getDoctorId(), patientPrescription.getPatientId());
+                        formFilled = false;
+                        removeAll();
+                        prescriptionsPanel();
+                    }
+                }
+                if(patientPrescription == null)
+                    Notification.show("Nie istnieje taki pacjent");
+
+            });
+            if(!prescriptionId.isEmpty() && formFilled){
+                createPrescription.setEnabled(false);
+                editPrescription.setEnabled(true);
+            }else if(prescriptionId.isEmpty()){
+                createPrescription.setEnabled(true);
+                editPrescription.setEnabled(false);
+            }
+
+            vl2.add(searchAllPrescriptions,hl,searchPrescriptionsUsingPatient,prescriptionGrid);
+            hl2.add(createPrescription,editPrescription);
+            vl3.add(label,prescriptionId,fillEditForm,prescriptionId,fillEditForm,nameField2,lastNameField2,disease,medicine,dose,route,frequency,startDate,endDate,remarks,hl2);
+
+        }
+        if(zalogowany && patient !=null){
+            prescriptionGrid = new Grid<>(Prescription.class);
+            prescriptionGrid.setColumns("prescriptionId", "disease", "medicine", "dose","route", "frequency","startDate","endDate","remarks");
+            prescriptionGrid.getColumnByKey("prescriptionId").setHeader("Id:").setWidth("50px");
+            prescriptionGrid.getColumnByKey("disease").setHeader("Nazwa choroby:");
+            prescriptionGrid.getColumnByKey("medicine").setHeader("Nazwa lekarstwa:");
+            prescriptionGrid.getColumnByKey("dose").setHeader("Dawka:");
+            prescriptionGrid.getColumnByKey("route").setHeader("Droga podania lekarstwa:");
+            prescriptionGrid.getColumnByKey("frequency").setHeader("Częstotliwość:");
+            prescriptionGrid.getColumnByKey("startDate").setHeader("Dzień rozpoczęcia przyjmowania leku:");
+            prescriptionGrid.getColumnByKey("endDate").setHeader("Dzień końca przyjmowania leku:");
+            prescriptionGrid.getColumnByKey("remarks").setHeader("Uwagi, zalecenia:");
+            prescriptionGrid.setItems(prescriptionService.findByPatient(patient.getPatientId()));
+            prescriptionGrid.setThemeName("wrap-cell-content");
+            vl2.add(prescriptionGrid);
+        }
         vl.add(h1,h2info,returnToPreviousPanel);
         vl.setHorizontalComponentAlignment(Alignment.CENTER,h1);
-        add(vl);
+        add(vl,vl2,vl3);
     }
     public void appointmentsPanel(){
         vl = new VerticalLayout();
+        vl2 = new VerticalLayout();
+        hl = new HorizontalLayout();
+        hl2 = new HorizontalLayout();
         h1 = new H1("Gabinet Lekarski Medic");
         h2info = new H2("Wizyty");
 
+        if(zalogowany && doctor !=null){
+            datePicker = new DatePicker();
+            datePicker.setLabel("Dzień");
+            datePicker.setValue(LocalDate.now());
+            datePicker.setLocale(Locale.GERMANY);
+            timePicker = new TimePicker();
+            timePicker.setLabel("Godzina");
+            hl.add(datePicker,timePicker);
+            appointmentGrid = new Grid<>(Appointment.class);
+            appointmentGrid.setColumns("appointmentDate","appointmentStartTime","appointmentEndTime","roomNumber");
+            appointmentGrid.setItems(appointmentService.findByDoctor(doctor.getDoctorId()));
+            nameField = new TextField("Imię pacjenta");
+            lastNameField = new TextField("Nazwisko pacjenta");
+            hl2.add(nameField,lastNameField);
+            searchAppointments = new Button("Wyszukaj wizyty pacjenta", buttonClickEvent -> {
+                Patient patient = patientService.findByNameAndLastName(nameField.getValue(),lastNameField.getValue());
+                appointmentGrid.setItems(appointmentService.findByPatient(patient.getPatientId()));
+
+            });
+            appointmentGrid.addItemClickListener(e -> {
+                selectedAppointment = e.getItem();
+            });
+            deleteAppointment = new Button("Usuń wybraną wizytę", buttonClickEvent -> {
+                if(selectedAppointment!=null){
+                    long id= selectedAppointment.getAppointmentId();
+                    appointmentService.deleteAppointmentById(id);
+                    appointmentGrid.setItems(appointmentService.findByDoctor(doctor.getDoctorId()));
+                }else{
+                    Notification.show("Nie wybrano wizyty!");
+                }
+            });
+            label = new Label("Stwórz wizytę");
+            nameField2 = new TextField("Imię pacjenta");
+            lastNameField2 = new TextField("Nazwisko pacjenta");
+
+            roomNumberField = new TextField("Numer pokoju");
+            createAppointment = new Button("Stwórz wizytę na dzień i godzine wybraną z pól nad tabelą", buttonClickEvent -> {
+                Patient patientFound = patientService.findByNameAndLastName(nameField2.getValue(),lastNameField2.getValue());
+                if(patientFound == null){
+                    Notification.show("Pacjent nie istnieje");
+                }else {
+                    appointmentService.setAppointment(new Appointment(
+                            datePicker.getValue(),
+                            timePicker.getValue(),
+                            timePicker.getValue().plusMinutes(50),roomNumberField.getValue()),
+                            doctor.getDoctorId(),
+                            patientFound.getPatientId()
+                    );
+                }
+            });
+            vl2.add(hl,appointmentGrid,hl2,searchAppointments,deleteAppointment,label,nameField2,lastNameField2,roomNumberField, createAppointment);
+        }
+        if(zalogowany && patient !=null){
+
+        }
         returnToPreviousPanel = new Button( "Powrót", buttonClickEvent -> {
             removeAll();
             mainPagePanel();
         });
-        vl.add(h1,h2info,returnToPreviousPanel);
+        vl.add(h1,h2info,returnToPreviousPanel,vl2);
         vl.setHorizontalComponentAlignment(Alignment.CENTER,h1);
         add(vl);
     }
