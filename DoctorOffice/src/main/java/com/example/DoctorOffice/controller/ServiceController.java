@@ -172,6 +172,14 @@ public class ServiceController {
         }
         return (Appointment) appointmentFound;
     }
+    /*@GetMapping("/appointment/doctorId={doctorId}&appointmentDate={appointmentDate}")
+    public Appointment findAppointmentByDoctorAndDate(@PathVariable("doctorId")Integer doctorId,@PathVariable("appointmentDate") LocalDate appointmentDate){
+        List<Appointment> appointmentFound = appointmentService.findByDoctorAndDate(doctorId,appointmentDate);
+        if(appointmentFound.isEmpty()){
+            return null;
+        }
+        return (Appointment) appointmentFound;
+    }*/
 
     @GetMapping("/appointmentsDateDesc")
     public List<Appointment> getAllAppointmentsDateDesc(){
@@ -220,6 +228,7 @@ public class ServiceController {
         }
         return (Prescription) prescriptionFound;
     }
+
     @GetMapping("/prescription/patientId={patientId}")
     public Prescription findPrescriptionByPatient(@PathVariable("patientId")Integer patientId){
         List<Prescription> prescriptionFound = prescriptionService.findByPatient(patientId);

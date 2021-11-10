@@ -34,7 +34,6 @@ import java.util.Locale;
 import java.util.Optional;
 
 
-// TODO : Appointment View (calendar if possible) where doctor can create/edit appointments in a given day also book and assign them to patients, and where patient can see them and assign himself to them
 @UIScope
 @SpringComponent
 @Route("doctorsOffice")
@@ -58,6 +57,8 @@ public class ViewController extends VerticalLayout {
     Grid<Prescription> prescriptionGrid;
     Grid<Appointment> appointmentGrid;
     Label label;
+    Label appointmentDetails;
+    Label appointmentInfo;
     Button loginPatient;
     Button registerPatient;
     Button loginDoctor;
@@ -96,6 +97,7 @@ public class ViewController extends VerticalLayout {
     TextField lastNameField2;
 
     Appointment selectedAppointment;
+    Appointment appointmentToEdit;
 
     DatePicker datePicker;
     TimePicker timePicker;
@@ -112,6 +114,7 @@ public class ViewController extends VerticalLayout {
     TextField doctorEmail;
     HorizontalLayout hl;
     HorizontalLayout hl2;
+    HorizontalLayout hl3;
     @PostConstruct
     private void init() {
         if (!zalogowany){
@@ -643,6 +646,7 @@ public class ViewController extends VerticalLayout {
         vl2 = new VerticalLayout();
         hl = new HorizontalLayout();
         hl2 = new HorizontalLayout();
+        hl3 = new HorizontalLayout();
         h1 = new H1("Gabinet Lekarski Medic");
         h2info = new H2("Wizyty");
 
@@ -651,15 +655,23 @@ public class ViewController extends VerticalLayout {
             datePicker.setLabel("Dzień");
             datePicker.setValue(LocalDate.now());
             datePicker.setLocale(Locale.GERMANY);
+            datePicker.addValueChangeListener( e->{
+                appointmentGrid.setItems(appointmentService.findByDoctorAndDate(doctor.getDoctorId(),datePicker.getValue()));
+            });
             timePicker = new TimePicker();
             timePicker.setLabel("Godzina");
             hl.add(datePicker,timePicker);
             appointmentGrid = new Grid<>(Appointment.class);
             appointmentGrid.setColumns("appointmentDate","appointmentStartTime","appointmentEndTime","roomNumber");
-            appointmentGrid.setItems(appointmentService.findByDoctor(doctor.getDoctorId()));
+            appointmentGrid.getColumnByKey("appointmentDate").setHeader("Data wizyty: ");
+            appointmentGrid.getColumnByKey("appointmentStartTime").setHeader("Godzina rozpoczęcia wizyty: ");
+            appointmentGrid.getColumnByKey("appointmentEndTime").setHeader("Godzina zakończenia wizyty: ");
+            appointmentGrid.getColumnByKey("roomNumber").setHeader("Numer pokoju: ");
+            appointmentGrid.setItems(appointmentService.findByDoctorAndDate(doctor.getDoctorId(),datePicker.getValue()));
             nameField = new TextField("Imię pacjenta");
             lastNameField = new TextField("Nazwisko pacjenta");
             hl2.add(nameField,lastNameField);
+            appointmentDetails = new Label();
             searchAppointments = new Button("Wyszukaj wizyty pacjenta", buttonClickEvent -> {
                 Patient patient = patientService.findByNameAndLastName(nameField.getValue(),lastNameField.getValue());
                 appointmentGrid.setItems(appointmentService.findByPatient(patient.getPatientId()));
@@ -667,16 +679,43 @@ public class ViewController extends VerticalLayout {
             });
             appointmentGrid.addItemClickListener(e -> {
                 selectedAppointment = e.getItem();
+                appointmentDetails.setText("Wizyta: (Lekarz)) " +selectedAppointment.getDoctor().getName() +
+                        " " +selectedAppointment.getDoctor().getLastName()+ " - " + selectedAppointment.getPatient().getName()
+                        + " " + selectedAppointment.getPatient().getLastName() + " (Pacjent) godzina: " + selectedAppointment.getAppointmentStartTime().toString());
             });
+            appointmentGrid.addItemDoubleClickListener( e ->{
+                appointmentToEdit = e.getItem();
+                datePicker.setValue(appointmentToEdit.getAppointmentDate());
+                timePicker.setValue(appointmentToEdit.getAppointmentStartTime());
+                nameField2.setValue(appointmentToEdit.getPatient().getName());
+                lastNameField2.setValue(appointmentToEdit.getPatient().getLastName());
+                roomNumberField.setValue(appointmentToEdit.getRoomNumber());
+                editAppointment.setEnabled(true);
+            });
+
             deleteAppointment = new Button("Usuń wybraną wizytę", buttonClickEvent -> {
                 if(selectedAppointment!=null){
                     long id= selectedAppointment.getAppointmentId();
                     appointmentService.deleteAppointmentById(id);
-                    appointmentGrid.setItems(appointmentService.findByDoctor(doctor.getDoctorId()));
+                    appointmentGrid.setItems(appointmentService.findByDoctorAndDate(doctor.getDoctorId(),datePicker.getValue()));
                 }else{
                     Notification.show("Nie wybrano wizyty!");
                 }
             });
+            editAppointment = new Button("Edytuj wizytę (kliknij dwa razy na rekord tabeli by aktywować)", buttonClickEvent -> {
+                appointmentToEdit.setAppointmentDate(datePicker.getValue());
+                appointmentToEdit.setAppointmentStartTime(timePicker.getValue());
+                appointmentToEdit.setAppointmentEndTime(timePicker.getValue().plusMinutes(50));
+                appointmentToEdit.setRoomNumber(roomNumberField.getValue());
+                Patient patientInEdit = patientService.findByNameAndLastName(nameField2.getValue(),lastNameField2.getValue());
+                if(patientInEdit != null) {
+                    appointmentService.setAppointment(appointmentToEdit, doctor.getDoctorId(),patientInEdit.getPatientId());
+                    appointmentGrid.setItems(appointmentService.findByDoctorAndDate(doctor.getDoctorId(),datePicker.getValue()));
+                } else {
+                    Notification.show("Nie ma takiego pacjenta");
+                }
+            });
+            editAppointment.setEnabled(false);
             label = new Label("Stwórz wizytę");
             nameField2 = new TextField("Imię pacjenta");
             lastNameField2 = new TextField("Nazwisko pacjenta");
@@ -692,14 +731,37 @@ public class ViewController extends VerticalLayout {
                             timePicker.getValue(),
                             timePicker.getValue().plusMinutes(50),roomNumberField.getValue()),
                             doctor.getDoctorId(),
-                            patientFound.getPatientId()
-                    );
+                            patientFound.getPatientId());
+                    appointmentGrid.setItems(appointmentService.findByDoctorAndDate(doctor.getDoctorId(),datePicker.getValue()));
                 }
             });
-            vl2.add(hl,appointmentGrid,hl2,searchAppointments,deleteAppointment,label,nameField2,lastNameField2,roomNumberField, createAppointment);
+            hl3.add(createAppointment,editAppointment);
+            vl2.add(hl,appointmentDetails,appointmentGrid,hl2,searchAppointments,deleteAppointment,label,nameField2,lastNameField2,roomNumberField,hl3);
         }
         if(zalogowany && patient !=null){
-
+            datePicker = new DatePicker();
+            datePicker.setLabel("Dzień");
+            datePicker.setValue(LocalDate.now());
+            datePicker.setLocale(Locale.GERMANY);
+            datePicker.addValueChangeListener( e->{
+                appointmentGrid.setItems(appointmentService.findByPatientAndDate(patient.getPatientId(),datePicker.getValue()));
+            });
+            appointmentGrid = new Grid<>(Appointment.class);
+            appointmentGrid.setColumns("appointmentDate","appointmentStartTime","appointmentEndTime","roomNumber");
+            appointmentGrid.getColumnByKey("appointmentDate").setHeader("Data wizyty: ");
+            appointmentGrid.getColumnByKey("appointmentStartTime").setHeader("Godzina rozpoczęcia wizyty: ");
+            appointmentGrid.getColumnByKey("appointmentEndTime").setHeader("Godzina zakończenia wizyty: ");
+            appointmentGrid.getColumnByKey("roomNumber").setHeader("Numer pokoju: ");
+            appointmentGrid.setItems(appointmentService.findByPatientAndDate(patient.getPatientId(),datePicker.getValue()));
+            appointmentDetails = new Label();
+            appointmentGrid.addItemClickListener(e -> {
+                selectedAppointment = e.getItem();
+                appointmentDetails.setText("Wizyta: (Lekarz)) " +selectedAppointment.getDoctor().getName() +
+                        " " +selectedAppointment.getDoctor().getLastName()+ " - " + selectedAppointment.getPatient().getName()
+                        + " " + selectedAppointment.getPatient().getLastName() + " (Pacjent) godzina: " + selectedAppointment.getAppointmentStartTime().toString());
+            });
+            appointmentInfo = new Label("W przypadku chęci zmiany wizyty lub jej całkowitego odwołania prosimy o skontaktowanie się z recepcją gabinetu lekarskiego lub z samym lekarzem (informacje kontaktowe widoczne na głównej stronie)");
+            vl2.add(datePicker,appointmentDetails,appointmentGrid,appointmentInfo);
         }
         returnToPreviousPanel = new Button( "Powrót", buttonClickEvent -> {
             removeAll();

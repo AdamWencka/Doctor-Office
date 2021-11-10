@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -69,15 +70,10 @@ public class AppointmentService {
         }
        return null;
     }
-    /*public List<Appointment> findByDoctorAndDate(Integer doctorId, LocalDate date)
+    public List<Appointment> findByDoctorAndDate(Integer doctorId, LocalDate date)
     {
-        Optional<Doctor> assignedDoctor = doctorRepository.findById(doctorId);
-        if(assignedDoctor.isPresent()){
-            Doctor doctor = assignedDoctor.get();
-            return appointmentRepository.findByDoctorAndDate(doctor.getDoctorId(),date);
-        }
-        return null;
-    }*/
+            return appointmentRepository.findByDoctorAndDate(doctorId,date);
+    }
     public List<Appointment> findByPatient(Integer patientId){
         Optional<Patient> assignedPatient = patientRepository.findById(patientId);
         if(assignedPatient.isPresent()){
@@ -86,14 +82,9 @@ public class AppointmentService {
         }
         return null;
     }
-   /* public List<Appointment> findByPatientAndDate(Integer patientId, LocalDate date){
-        Optional<Patient> assignedPatient = patientRepository.findById(patientId);
-        if(assignedPatient.isPresent()){
-            Patient patient = assignedPatient.get();
-            return appointmentRepository.findByPatientAndDate(patient.getPatientId(),date);
-        }
-        return null;
-    }*/
+   public List<Appointment> findByPatientAndDate(Integer patientId, LocalDate date){
+        return appointmentRepository.findByPatientAndDate(patientId,date);
+    }
 
     public List<Appointment> findAllByDateDesc(){
         return  appointmentRepository.findAllByDateDesc();

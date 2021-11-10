@@ -39,7 +39,6 @@ public class Appointment {
     @JoinColumn(name="doctor_id",nullable = false)
     @JsonIgnoreProperties({"appointmentsList"})
     private Doctor doctor;
-
     public Appointment(LocalDate appointmentDate, LocalTime appointmentStartTime, LocalTime appointmentEndTime,  String roomNumber, Patient patient, Doctor doctor) {
         this.appointmentDate = appointmentDate;
         this.appointmentStartTime = appointmentStartTime;
