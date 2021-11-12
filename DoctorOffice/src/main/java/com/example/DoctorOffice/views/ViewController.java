@@ -190,7 +190,7 @@ public class ViewController extends VerticalLayout {
             }
         });
         hl.add(loginPatient, loginDoctor,goToServiceAndPrices, goToPrescriptions, goToAppointments);
-        image = new Image("https://lh3.googleusercontent.com/proxy/VfAQ5oMiJXsN_1QSPhOVje2-1IZEleQyoTmuvSlMcx5tO7L0bUy8NTUVk8lnQf8wvPNodBeWwERb02xoHJb6aczm6VWe8nvb-13i7VuZYIC7Uvgu_kpW8fFvybqdqBH5MRgZn0AuqKPCRabm2wDKldxWS5ie27ux","Image Doctor's Office");
+        image = new Image("https://biuromarket.com.pl/media/magefan_blog/7fed6fe52324df59c3e8bafd12d7cdbe.jpg","Image Doctor's Office");
         paragraph = new Paragraph();
         String html = "<br>Kompleksowa opieka medyczna w Bydgoszczy.<br>" +
                 "Nasz Gabinet to ośrodek oferujący Państwu opiekę medyczną w zakresie wielu dyscyplin lekarskich.<br>" +
